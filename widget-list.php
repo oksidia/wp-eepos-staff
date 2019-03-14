@@ -1,0 +1,136 @@
+<?php
+
+class EeposStaffListWidget extends WP_Widget {
+	public function __construct() {
+		parent::__construct(
+			'eepos_staff_list_widget',
+			'Henkilökuntalista',
+			[
+				'description' => 'Lista henkilökunnan jäsenistä'
+			]
+		);
+
+		wp_register_style( 'eepos_staff_list_widget_styles', plugin_dir_url( __FILE__ ) . '/widget-list-basic.css' );
+		wp_register_script( 'eepos_staff_list_widget_script', plugin_dir_url( __FILE__ ) . '/widget-list.js' );
+	}
+
+	public function form( $instance ) {
+		$defaults = [
+			'title'              => '',
+			'filter_fields'      => '',
+			'staff_desc_format'  => '',
+			'use_default_styles' => true
+		];
+
+		$args = wp_parse_args( $instance, $defaults );
+
+		$fields = EeposStaffUtils::getFields();
+		$lang   = EeposStaffUtils::getCurrentAdminLanguage();
+
+		$slugs    = array_map( function ( $f ) {
+			return $f->slug;
+		}, $fields );
+		$descVars = array_map( function ( $slug ) {
+			return "{{$slug}}";
+		}, $slugs );
+
+		$filterFieldOpts = array_map( function ( $field ) use ( $lang ) {
+			return (object) [
+				'slug' => $field->slug,
+				'name' => EeposStaffUtils::translate( $field->name, $lang )
+			];
+		}, $fields );
+		array_unshift( $filterFieldOpts, (object) [ 'slug' => '--all--', 'name' => '- Kaikki -' ] );
+
+		?>
+		<p>
+			<label>
+				<?php _e( 'Otsikko', 'eepos_staff' ) ?>
+				<input type="text" class="widefat" name="<?= $this->get_field_name( 'title' ) ?>"
+				       value="<?= esc_attr( $args['title'] ) ?>">
+			</label>
+		</p>
+		<p>
+			<label>
+				<strong><?php _e( 'Kuvauksen formaatti', 'eepos_staff' ) ?></strong><br>
+				Muuttujat: <?= implode( ' ', $descVars ) ?><br>
+				<textarea
+						name="<?= $this->get_field_name( 'staff_desc_format' ) ?>"><?= esc_html( $args['staff_desc_format'] ) ?></textarea>
+			</label>
+		</p>
+		<p>
+			<?php _e( 'Suodatettavat kentät', 'eepos_staff' ) ?><br>
+			<select name="<?= $this->get_field_name( 'filter_fields' ) ?>[]" multiple>
+				<?php foreach ( $filterFieldOpts as $opt ) { ?>
+					<option value="<?= esc_attr( $opt->slug ) ?>"<?= in_array( $opt->slug, $args['filter_fields'] ) ? ' selected' : '' ?>>
+						<?= esc_html( $opt->name ) ?>
+					</option>
+				<?php } ?>
+			</select>
+		</p>
+
+		<p>
+			<label>
+				<input type="checkbox"
+				       name="<?= $this->get_field_name( 'use_default_styles' ) ?>"<?= $args['use_default_styles'] ? ' checked' : '' ?>>
+				<?php _e( 'Käytä perustyylejä', 'eepos_staff' ) ?>
+			</label>
+		</p>
+		<?php
+	}
+
+	public function update( $new_instance, $old_instance ) {
+		$instance                       = $old_instance;
+		$instance['title']              = wp_strip_all_tags( $new_instance['title'] ?? '' );
+		$instance['filter_fields']      = $new_instance['filter_fields'] ?? [];
+		$instance['staff_desc_format']  = wp_strip_all_tags( $new_instance['staff_desc_format'] ?? '' );
+		$instance['use_default_styles'] = ( $new_instance['use_default_styles'] ?? null ) === 'on';
+
+		return $instance;
+	}
+
+	public function widget( $args, $instance ) {
+		$staffMembers = get_posts( [
+			'post_type' => 'eepos_staff_member'
+		] );
+
+		foreach ($staffMembers as $member) {
+			$member->meta = get_post_meta($member->ID);
+		}
+
+		$lang = EeposStaffUtils::getCurrentSiteLanguage();
+
+		?>
+		<div class="staff-member-list">
+			<?php
+				foreach ($staffMembers as $member) {
+					$image = isset($member->meta['eepos_staff_image'][0]) ? unserialize($member->meta['eepos_staff_image'][0]) : null;
+
+					$fieldsRaw = $member->meta['eepos_staff_fields'][0] ?? '[]';
+					$fields = json_decode($fieldsRaw);
+					$vars = array_reduce($fields, function($map, $field) use ($lang) {
+						$key = "{{$field->slug}}";
+						$map[$key] = esc_html(EeposStaffUtils::translate($field->value, $lang));
+						return $map;
+					}, []);
+
+					$desc = str_replace(array_keys($vars), array_values($vars), $instance['staff_desc_format']);
+			?>
+				<div class="staff-member">
+					<?php if ($image) { ?>
+						<img src="<?= esc_attr($image['url']) ?>" aria-hidden="true" alt="">
+					<?php } ?>
+					<div class="name"><?= esc_html($member->post_title) ?></div>
+					<div class="desc"><?= $desc ?></div>
+				</div>
+			<?php } ?>
+		</div>
+		<?php
+	}
+}
+
+function eepos_staff_register_list_widget() {
+	register_widget( 'EeposStaffListWidget' );
+}
+
+add_action( 'widgets_init', 'eepos_staff_register_list_widget' );
