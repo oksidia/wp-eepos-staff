@@ -65,7 +65,7 @@ function eepos_staff_save( $post_id ) {
 		return;
 	}
 
-	$language = $_POST['wpglobus_language'] ?? null;
+	$language = $_POST['wpglobus_language'] ?? WPGlobus::Config()->language;
 
 	// Upload staff image
 	if ( isset( $_FILES['eepos_staff_image'] ) && $_FILES['eepos_staff_image']['name'] !== '' ) {
@@ -100,9 +100,6 @@ function eepos_staff_save( $post_id ) {
 		$fieldValue = $value;
 
 		if ( EeposStaffUtils::translationsEnabled() ) {
-			if ( ! $language ) {
-				wp_die( 'Translations are enabled but no language key was supplied?' );
-			}
 			$oldField   = $oldFieldsBySlug[ $fieldSlug ] ?? null;
 			$fieldValue = EeposStaffUtils::mergeLanguageStrings( $oldField->value ?? '', $language, $fieldValue );
 		}
