@@ -84,6 +84,10 @@ class EeposStaffUtils {
 			return $str;
 		}
 
+		if ($lang === null) {
+			return $str;
+		}
+
 		return WPGlobus_Core::text_filter($str, $lang, WPGlobus::RETURN_EMPTY);
 	}
 

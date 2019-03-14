@@ -1,0 +1,53 @@
+.staff-member-list-widget {
+    line-height: 1.5;
+}
+
+.staff-member-list-widget .staff-member-filters:after {
+    /* Clearfix, see http://cssmojo.com/latest_new_clearfix_so_far/ */
+    clear: both;
+    content: "";
+    display: table;
+
+    margin: 0 0 24px;
+}
+
+.staff-member-list-widget .staff-member-filter {
+    width: 50%;
+    float: left;
+}
+
+.staff-member-list-widget .staff-member-filter .filter-title {
+    font-weight: bold;
+}
+
+.staff-member-list-widget .staff-member.hidden {
+    display: none;
+}
+
+.staff-member-list-widget .staff-member-list:after {
+    /* Clearfix, see http://cssmojo.com/latest_new_clearfix_so_far/ */
+    clear: both;
+    content: "";
+    display: table;
+}
+
+.staff-member-list-widget .staff-member {
+    width: 33%;
+    float: left;
+    padding: 8px;
+}
+
+.staff-member-list-widget .staff-member .image-container {
+    height: 280px;
+}
+
+.staff-member-list-widget .staff-member img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.staff-member-list-widget .staff-member .name {
+    font-weight: bold;
+    font-size: 1.1rem;
+}

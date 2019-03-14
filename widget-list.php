@@ -40,7 +40,6 @@ class EeposStaffListWidget extends WP_Widget {
 				'name' => EeposStaffUtils::translate( $field->name, $lang )
 			];
 		}, $fields );
-		array_unshift( $filterFieldOpts, (object) [ 'slug' => '--all--', 'name' => '- Kaikki -' ] );
 
 		?>
 		<p>
@@ -90,6 +89,12 @@ class EeposStaffListWidget extends WP_Widget {
 	}
 
 	public function widget( $args, $instance ) {
+		wp_enqueue_style('eepos_staff_list_widget_styles');
+		wp_enqueue_script('eepos_staff_list_widget_script');
+
+		$fields = EeposStaffUtils::getFields();
+		$fieldsBySlug = EeposStaffUtils::indexBy($fields, 'slug');
+
 		$staffMembers = get_posts( [
 			'post_type' => 'eepos_staff_member'
 		] );
@@ -100,30 +105,82 @@ class EeposStaffListWidget extends WP_Widget {
 
 		$lang = EeposStaffUtils::getCurrentSiteLanguage();
 
+		$filterFields = $instance['filter_fields'] ?? [];
+		$filterValues = [];
+		$filterNormalizedValues = [];
+
+		foreach ($staffMembers as $member) {
+			$fieldsRaw = $member->meta['eepos_staff_fields'][0] ?? '[]';
+			$member->fields = json_decode($fieldsRaw);
+
+			foreach ($member->fields as $field) {
+				$filterValues[$field->slug] = $filterValues[$field->slug] ?? [];
+				$filterNormalizedValues[$field->slug] = $filterNormalizedValues[$field->slug] ?? [];
+
+				$translatedFieldValue = EeposStaffUtils::translate($field->value, $lang);
+				$fieldValues = preg_split('/,\s*/', $translatedFieldValue);
+
+				foreach ($fieldValues as $value) {
+					$normalizedValue = mb_strtolower($value);
+					if (in_array($normalizedValue, $filterNormalizedValues[$field->slug])) continue;
+
+					$filterValues[$field->slug][] = $value;
+					$filterNormalizedValues[$field->slug][] = $normalizedValue;
+				}
+			}
+		}
+
 		?>
-		<div class="staff-member-list">
-			<?php
-				foreach ($staffMembers as $member) {
-					$image = isset($member->meta['eepos_staff_image'][0]) ? unserialize($member->meta['eepos_staff_image'][0]) : null;
+		<div class="staff-member-list-widget">
+			<?php if (count($filterFields)) { ?>
+				<div class="staff-member-filters">
+					<?php
+						foreach ($filterFields as $field) {
+							$fieldName = $fieldsBySlug[$field]->name ?? null;
+							$fieldName = EeposStaffUtils::translate($fieldName, $lang);
 
-					$fieldsRaw = $member->meta['eepos_staff_fields'][0] ?? '[]';
-					$fields = json_decode($fieldsRaw);
-					$vars = array_reduce($fields, function($map, $field) use ($lang) {
-						$key = "{{$field->slug}}";
-						$map[$key] = esc_html(EeposStaffUtils::translate($field->value, $lang));
-						return $map;
-					}, []);
-
-					$desc = str_replace(array_keys($vars), array_values($vars), $instance['staff_desc_format']);
-			?>
-				<div class="staff-member">
-					<?php if ($image) { ?>
-						<img src="<?= esc_attr($image['url']) ?>" aria-hidden="true" alt="">
+							$thisFilterValues = $filterValues[$field] ?? [];
+							array_unshift($thisFilterValues, '');
+					?>
+						<div class="staff-member-filter">
+							<div class="filter-title"><?= esc_html($fieldName) ?></div>
+							<select class="staff-member-filter-select" data-field="<?= esc_attr($field) ?>">
+								<?php foreach ($thisFilterValues as $value) { ?>
+									<option value="<?= esc_attr($value) ?>"><?= esc_html($value) ?></option>
+								<?php } ?>
+							</select>
+						</div>
 					<?php } ?>
-					<div class="name"><?= esc_html($member->post_title) ?></div>
-					<div class="desc"><?= $desc ?></div>
 				</div>
 			<?php } ?>
+			<div class="staff-member-list">
+				<?php
+					foreach ($staffMembers as $member) {
+						$image = isset($member->meta['eepos_staff_image'][0]) ? unserialize($member->meta['eepos_staff_image'][0]) : null;
+
+						$vars = array_reduce($member->fields, function($map, $field) use ($lang) {
+							$key = "{{$field->slug}}";
+							$map[$key] = esc_html(EeposStaffUtils::translate($field->value, $lang));
+							return $map;
+						}, []);
+
+						$desc = str_replace(array_keys($vars), array_values($vars), $instance['staff_desc_format']);
+						$attrs = array_map(function($field) use ($lang) {
+							$normalizedTranslatedValue = mb_strtolower(EeposStaffUtils::translate($field->value, $lang));
+							return "data-field-" . esc_html($field->slug) . "=\"" . esc_attr($normalizedTranslatedValue) . "\"";
+						}, $member->fields);
+				?>
+					<div class="staff-member" <?= implode(' ', $attrs) ?>>
+						<?php if ($image) { ?>
+							<div class="image-container">
+								<img src="<?= esc_attr($image['url']) ?>" aria-hidden="true" alt="">
+							</div>
+						<?php } ?>
+						<div class="name"><?= esc_html($member->post_title) ?></div>
+						<div class="desc"><?= $desc ?></div>
+					</div>
+				<?php } ?>
+			</div>
 		</div>
 		<?php
 	}
