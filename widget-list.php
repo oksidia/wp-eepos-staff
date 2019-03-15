@@ -96,7 +96,9 @@ class EeposStaffListWidget extends WP_Widget {
 		$fieldsBySlug = EeposStaffUtils::indexBy($fields, 'slug');
 
 		$staffMembers = get_posts( [
-			'post_type' => 'eepos_staff_member'
+			'post_type' => 'eepos_staff_member',
+			'orderby' => 'title',
+			'order' => 'ASC'
 		] );
 
 		foreach ($staffMembers as $member) {

@@ -6,10 +6,11 @@ class EeposStaffUtils {
 	}
 
 	public static function indexBy($arr, $key) {
-		return array_reduce($arr, function($map, $item) use ($key) {
-			$map[$item->{$key}] = $item;
+		return array_reduce( $arr, function ( $map, $item ) use ( $key ) {
+			$map[ $item->{$key} ] = $item;
+
 			return $map;
-		}, []);
+		}, [] );
 	}
 
 	public static function getFields() {

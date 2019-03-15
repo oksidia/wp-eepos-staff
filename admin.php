@@ -87,7 +87,7 @@ function eepos_staff_save( $post_id ) {
 	}
 
 	// Update staff fields
-	$oldFields       = json_decode( get_post_meta( $post_id, 'eepos_staff_fields', true ) ?? '[]' );
+	$oldFields       = json_decode( get_post_meta( $post_id, 'eepos_staff_fields', true ) ?: '[]' );
 	$oldFieldsBySlug = EeposStaffUtils::indexBy( $oldFields, 'slug' );
 
 	$newFields = [];
