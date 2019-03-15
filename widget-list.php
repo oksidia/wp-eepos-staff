@@ -82,7 +82,7 @@ class EeposStaffListWidget extends WP_Widget {
 		$instance                       = $old_instance;
 		$instance['title']              = wp_strip_all_tags( $new_instance['title'] ?? '' );
 		$instance['filter_fields']      = $new_instance['filter_fields'] ?? [];
-		$instance['staff_desc_format']  = wp_strip_all_tags( $new_instance['staff_desc_format'] ?? '' );
+		$instance['staff_desc_format']  = $new_instance['staff_desc_format'] ?? '';
 		$instance['use_default_styles'] = ( $new_instance['use_default_styles'] ?? null ) === 'on';
 
 		return $instance;
