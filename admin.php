@@ -15,7 +15,12 @@ function eepos_staff_meta_box() {
 	$fields       = EeposStaffUtils::getFields();
 	$fieldsBySlug = EeposStaffUtils::indexBy( $fields, 'slug' );
 
-	$postFields = json_decode( get_post_meta( $post->ID, 'eepos_staff_fields', true ) ?? '[]' );
+	$postFields = get_post_meta( $post->ID, 'eepos_staff_fields', true ) ?: [];
+	if ( is_string( $postFields ) ) {
+		// Backwards compat
+		$postFields = json_decode( $postFields );
+	}
+
 	foreach ( $postFields as $field ) {
 		if ( ! isset( $fieldsBySlug[ $field->slug ] ) ) {
 			continue;
@@ -25,14 +30,14 @@ function eepos_staff_meta_box() {
 
 	$lang = EeposStaffUtils::getCurrentAdminLanguage();
 
-	$existingImage = get_post_meta($post->ID, 'eepos_staff_image', true);
+	$existingImage = get_post_meta( $post->ID, 'eepos_staff_image', true );
 
 	?>
 	<table class="form-table">
 		<tr>
 			<th>Kuva</th>
 			<td>
-				<?php if ($existingImage) { ?>
+				<?php if ( $existingImage ) { ?>
 					<div style="width: 128px">
 						<img src="<?= esc_attr( $existingImage['url'] ) ?>" alt="Nykyinen kuva" style="max-width: 100%">
 					</div>
@@ -87,7 +92,12 @@ function eepos_staff_save( $post_id ) {
 	}
 
 	// Update staff fields
-	$oldFields       = json_decode( get_post_meta( $post_id, 'eepos_staff_fields', true ) ?: '[]' );
+	$oldFields = get_post_meta( $post_id, 'eepos_staff_fields', true ) ?: [];
+	if ( is_string( $oldFields ) ) {
+		// Backwards compat
+		$oldFields = json_decode( $oldFields );
+	}
+
 	$oldFieldsBySlug = EeposStaffUtils::indexBy( $oldFields, 'slug' );
 
 	$newFields = [];
@@ -104,10 +114,10 @@ function eepos_staff_save( $post_id ) {
 			$fieldValue = EeposStaffUtils::mergeLanguageStrings( $oldField->value ?? '', $language, $fieldValue );
 		}
 
-		$newFields[] = [ 'slug' => $fieldSlug, 'value' => $fieldValue ];
+		$newFields[] = (object) [ 'slug' => $fieldSlug, 'value' => $fieldValue ];
 	}
 
-	update_post_meta( $post_id, 'eepos_staff_fields', json_encode( $newFields ) );
+	update_post_meta( $post_id, 'eepos_staff_fields', $newFields );
 }
 
 add_action( 'save_post', 'eepos_staff_save' );
@@ -115,7 +125,8 @@ add_action( 'save_post', 'eepos_staff_save' );
 function eepos_staff_enable_file_uploads() {
 	echo ' enctype="multipart/form-data"';
 }
-add_action('post_edit_form_tag', 'eepos_staff_enable_file_uploads');
+
+add_action( 'post_edit_form_tag', 'eepos_staff_enable_file_uploads' );
 
 function eepos_staff_add_manage_menu_item() {
 	add_submenu_page(
@@ -286,7 +297,7 @@ function eepos_staff_manage_action() {
 		$newFields[] = (object) [ 'slug' => $slug, 'name' => $name ];
 	}
 
-	update_option( 'eepos_staff_fields', json_encode( $newFields ) );
+	update_option( 'eepos_staff_fields', $newFields );
 	wp_safe_redirect( EeposStaffUtils::menuPageUrl( 'manage-eepos-staff-options' ) );
 	exit;
 }
