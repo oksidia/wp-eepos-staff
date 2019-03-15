@@ -113,7 +113,7 @@ class EeposStaffListWidget extends WP_Widget {
 		$filterNormalizedValues = [];
 
 		foreach ( $staffMembers as $member ) {
-			$member->fields = $member->meta['eepos_staff_fields'][0] ?: [];
+			$member->fields = get_post_meta($member->ID, 'eepos_staff_fields', true) ?: [];
 			if ( is_string( $member->fields ) ) {
 				// Backwards compat
 				$member->fields = json_decode( $member->fields );
