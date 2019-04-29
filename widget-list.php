@@ -148,6 +148,7 @@ class EeposStaffListWidget extends WP_Widget {
 						$fieldName = EeposStaffUtils::translate( $fieldName, $lang );
 
 						$thisFilterValues = $filterValues[ $field ] ?? [];
+						sort($thisFilterValues);
 						array_unshift( $thisFilterValues, '' );
 						?>
 						<div class="staff-member-filter">
