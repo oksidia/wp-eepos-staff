@@ -113,7 +113,7 @@ class EeposStaffListWidget extends WP_Widget {
 		$filterNormalizedValues = [];
 
 		foreach ( $staffMembers as $member ) {
-			$member->fields = get_post_meta($member->ID, 'eepos_staff_fields', true) ?: [];
+			$member->fields = get_post_meta( $member->ID, 'eepos_staff_fields', true ) ?: [];
 			if ( is_string( $member->fields ) ) {
 				// Backwards compat
 				$member->fields = json_decode( $member->fields );
@@ -138,6 +138,19 @@ class EeposStaffListWidget extends WP_Widget {
 			}
 		}
 
+		usort( $staffMembers, function ( $a, $b ) {
+			$normalizedTitleA = mb_strtolower( $a->title );
+			$normalizedTitleB = mb_strtolower( $b->title );
+			if ( $normalizedTitleA > $normalizedTitleB ) {
+				return 1;
+			}
+			if ( $normalizedTitleA < $normalizedTitleB ) {
+				return - 1;
+			}
+
+			return 0;
+		} );
+
 		?>
 		<div class="staff-member-list-widget">
 			<?php if ( count( $filterFields ) ) { ?>
@@ -148,7 +161,7 @@ class EeposStaffListWidget extends WP_Widget {
 						$fieldName = EeposStaffUtils::translate( $fieldName, $lang );
 
 						$thisFilterValues = $filterValues[ $field ] ?? [];
-						sort($thisFilterValues);
+						sort( $thisFilterValues );
 						array_unshift( $thisFilterValues, '' );
 						?>
 						<div class="staff-member-filter">
