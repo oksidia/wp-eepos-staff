@@ -97,7 +97,7 @@ class EeposStaffListWidget extends WP_Widget {
 
 		$staffMembers = get_posts( [
 			'post_type'      => 'eepos_staff_member',
-			'orderby'        => 'title',
+			'orderby'        => 'post_title',
 			'order'          => 'ASC',
 			'posts_per_page' => - 1
 		] );
@@ -139,8 +139,8 @@ class EeposStaffListWidget extends WP_Widget {
 		}
 
 		usort( $staffMembers, function ( $a, $b ) {
-			$normalizedTitleA = mb_strtolower( $a->title );
-			$normalizedTitleB = mb_strtolower( $b->title );
+			$normalizedTitleA = mb_strtolower( $a->post_title );
+			$normalizedTitleB = mb_strtolower( $b->post_title );
 			if ( $normalizedTitleA > $normalizedTitleB ) {
 				return 1;
 			}
