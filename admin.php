@@ -21,6 +21,10 @@ function eepos_staff_meta_box() {
 		$postFields = json_decode( $postFields );
 	}
 
+	foreach ( $fields as $field ) {
+		$field->value = ""; // Default value
+	}
+
 	foreach ( $postFields as $field ) {
 		if ( ! isset( $fieldsBySlug[ $field->slug ] ) ) {
 			continue;
@@ -70,7 +74,10 @@ function eepos_staff_save( $post_id ) {
 		return;
 	}
 
-	$language = $_POST['wpglobus_language'] ?? WPGlobus::Config()->language;
+	$language = null;
+	if ( EeposStaffUtils::translationsEnabled() ) {
+		$language = $_POST['wpglobus_language'] ?? WPGlobus::Config()->language;
+	}
 
 	// Upload staff image
 	if ( isset( $_FILES['eepos_staff_image'] ) && $_FILES['eepos_staff_image']['name'] !== '' ) {
